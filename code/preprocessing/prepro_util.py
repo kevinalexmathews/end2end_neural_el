@@ -719,7 +719,7 @@ def create_entity_universe(gmonly_files=None, allspans_files=None, printSamples=
         gmonly_files = []
     if allspans_files is None:
         allspans_files = ['aida_train.txt', 'aida_dev.txt', 'aida_test.txt', 'ace2004.txt',
-                          'aquaint.txt', 'clueweb.txt', 'msnbc.txt', 'wikipedia.txt']
+                          'aquaint.txt', 'clueweb.txt', 'msnbc.txt', 'wikipedia.txt', 'wimcor_positive.txt']
     print("gmonly_files: ", gmonly_files)
     print("allspans_files: ", allspans_files)
 
@@ -823,7 +823,7 @@ if __name__ == "__main__":
     vocabularyCounter.count_datasets_vocabulary()
     if args.create_entity_universe:
         create_entity_universe(gmonly_files=[], allspans_files=['aida_train.txt', 'aida_dev.txt', 'aida_test.txt' # ])
-                                                                , 'ace2004.txt', 'aquaint.txt', 'msnbc.txt'])
+                                                                , 'ace2004.txt', 'aquaint.txt', 'msnbc.txt', 'wimcor_positive.txt'])
     else:
         create_tfrecords()
 
