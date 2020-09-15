@@ -9,7 +9,7 @@ def find(lst, key, value):
             return i
     return -1
 
-def process_wimcor(in_filepath, out_filepath):
+def process_wimcor(in_filepath, out_filepath, metotype=''):
     with open(in_filepath) as fin:
         content = fin.read()
     soup = BeautifulSoup(content, 'lxml')
@@ -20,9 +20,12 @@ def process_wimcor(in_filepath, out_filepath):
     entityNameIdMap.init_compatible_ent_id()
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
 
+    samples = []
     with open(out_filepath, "w") as fout:
         for idx, item in enumerate(soup.find_all('sample')):
+            cur_sample = []
             fout.write('DOCSTART_{}\n'.format(idx))
+            cur_sample.append('DOCSTART_{}\n'.format(idx))
 
             lcontext = str(item.find('pmw').previous_sibling) if item.find('pmw').previous_sibling else ""
             pmw = item.find('pmw').text
@@ -38,24 +41,34 @@ def process_wimcor(in_filepath, out_filepath):
                     ent_id = entityNameIdMap.compatible_ent_id(wiki_title)
                     if ent_id is not None:
                         fout.write('MMSTART_{}\n'.format(ent_id))
+                        cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 
                         in_pmw = True
                         ctr = len_pmw
                     else:
                         unknown_gt_ids += 1
                     fout.write('{}\n'.format(token))
+                    cur_sample.append('{}\n'.format(token))
                 elif in_pmw and ctr == 0:
                     in_pmw = False
 
                     fout.write('MMEND\n')
                     fout.write('{}\n'.format(token))
+                    cur_sample.append('MMEND\n')
+                    cur_sample.append('{}\n'.format(token))
                 else:
                     fout.write('{}\n'.format(token))
+                    cur_sample.append('{}\n'.format(token))
 
                 ctr -= 1
 
             fout.write('DOCEND\n')
+            cur_sample.append('DOCEND\n')
+
+            samples.append(cur_sample)
     print("process_wimcor    unknown_gt_ids: ", unknown_gt_ids)
+
+    return samples
 
 if __name__ == "__main__":
     '''

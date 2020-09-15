@@ -10,26 +10,35 @@ def process_aida(in_filepath, out_filepath):
     entityNameIdMap.init_compatible_ent_id()
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
     ent_id_changes = 0
+
+    samples = []
     with open(in_filepath) as fin, open(out_filepath, "w") as fout:
         in_mention = False   # am i inside a mention span or not
         first_document = True
+        cur_sample = []
         for line in fin:
             l = line.split('\t')
             if in_mention and not (len(l) == 7 and l[1]=='I'):
                 # if I am in mention but the current line does not continue the previous mention
                 # then print MMEND and be in state in_mention=FALSE
                 fout.write("MMEND\n")
+                cur_sample.append("MMEND\n")
                 in_mention = False
 
             if line.startswith("-DOCSTART-"):
                 if not first_document:
                     fout.write("DOCEND\n")
+                    cur_sample.append("DOCEND\n")
+                    samples.append(cur_sample)
+                    cur_sample = []
                 # line = "-DOCSTART- (967testa ATHLETICS)\n"
                 doc_title = line[len("-DOCSTART- ("): -2]
                 fout.write("DOCSTART_"+doc_title.replace(' ', '_')+"\n")
+                cur_sample.append("DOCSTART_"+doc_title.replace(' ', '_')+"\n")
                 first_document = False
             elif line == "\n":
                 fout.write("*NL*\n")
+                cur_sample.append("*NL*\n")
             elif len(l) == 7 and l[1] == 'B':  # this is a new mention
                 wiki_title = l[4]
                 wiki_title = wiki_title[len("http://en.wikipedia.org/wiki/"):].replace('_', ' ')
@@ -41,23 +50,30 @@ def process_aida(in_filepath, out_filepath):
                     fout.write("MMSTART_"+new_ent_id+"\n")   # TODO check here if entity id is inside my wikidump
                                                    # if not then omit this mention
                     fout.write(l[0]+"\n")  # write the word
+                    cur_sample.append("MMSTART_"+new_ent_id+"_LIT"+"\n")
+                    cur_sample.append(l[0]+"\n")
                     in_mention = True
                 else:
                     unknown_gt_ids += 1
                     fout.write(l[0]+"\n")  # write the word
+                    cur_sample.append(l[0]+"\n")
                     print(line)
             else:
                 # words that continue a mention len(l) == 7: and l[1]=='I'
                 # or normal word outside of mention, or in mention without disambiguation (len(l) == 4)
                 fout.write(l[0].rstrip()+"\n")
+                cur_sample.append(l[0].rstrip()+"\n")
         fout.write("DOCEND\n")  # for the last document
+        cur_sample.append("DOCEND\n")  # for the last document
+        samples.append(cur_sample)
     print("process_aida     unknown_gt_ids: ", unknown_gt_ids)
     print("process_aida     ent_id_changes: ", ent_id_changes)
 
+    return samples
 
-def split_dev_test(in_filepath):
-    with open(in_filepath) as fin, open(args.output_folder+"temp_aida_dev", "w") as fdev,\
-            open(args.output_folder+"temp_aida_test", "w") as ftest:
+def split_dev_test(in_filepath, out_dir):
+    with open(in_filepath) as fin, open(out_dir+"temp_aida_dev", "w") as fdev,\
+            open(out_dir+"temp_aida_test", "w") as ftest:
         fout = fdev
         for line in fin:
             if line.startswith("-DOCSTART-") and line.find("testb") != -1:
@@ -65,9 +81,9 @@ def split_dev_test(in_filepath):
             fout.write(line)
 
 
-def create_necessary_folders():
-    if not os.path.exists(args.output_folder):
-        os.makedirs(args.output_folder)
+def create_necessary_folders(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def _parse_args():
     parser = argparse.ArgumentParser()
@@ -77,10 +93,10 @@ def _parse_args():
 
 if __name__ == "__main__":
     args = _parse_args()
-    create_necessary_folders()
+    create_necessary_folders(args.output_folder)
     process_aida(args.aida_folder+"aida_train.txt", args.output_folder+"aida_train.txt")
 
-    split_dev_test(args.aida_folder+"testa_testb_aggregate_original")
+    split_dev_test(args.aida_folder+"testa_testb_aggregate_original", args.output_folder)
     process_aida(args.output_folder+"temp_aida_dev", args.output_folder+"aida_dev.txt")
     process_aida(args.output_folder+"temp_aida_test", args.output_folder+"aida_test.txt")
 
