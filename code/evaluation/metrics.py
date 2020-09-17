@@ -6,11 +6,11 @@ import tensorflow as tf
 
 class Evaluator(object):
     def __init__(self, threshold, name):
-        self.threshold = threshold
+        self.threshold = threshold    # confidence level
         self.name = name
-        self.TP = defaultdict(int)    # docid -> counter
-        self.FP = defaultdict(int)    # docid -> counter
-        self.FN = defaultdict(int)    # docid -> counter
+        self.TP = defaultdict(int)    # docid -> counter; ground truth correctly predicted with high confidence
+        self.FP = defaultdict(int)    # docid -> counter; incorrect entity predicted with high confidence
+        self.FN = defaultdict(int)    # docid -> counter; ground truth not predicted OR predicted with low confidence
         self.docs = set()             # set with all the docid encountered
         self.gm_num = 0
 
@@ -418,6 +418,7 @@ def metrics_calculation_and_prediction_printing(evaluator, final_scores,
             else:
                 if evaluator.check_fp(t[0], docid):
                     fp_pred.append(t)
+
 
         # now check for the fn
         temp = [t[:4] for t in filtered_spans]
