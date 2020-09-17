@@ -14,7 +14,7 @@ class Model(BaseModel):
         self.begin_span, self.end_span, self.spans_len,\
         self.cand_entities, self.cand_entities_scores, self.cand_entities_labels,\
         self.cand_entities_len, self.ground_truth, self.ground_truth_len,\
-        self.begin_gm, self.end_gm = next_element
+        self.begin_gm, self.end_gm, self.metotype = next_element
 
         self.begin_span = tf.cast(self.begin_span, tf.int32)
         self.end_span = tf.cast(self.end_span, tf.int32)
@@ -352,6 +352,8 @@ class Model(BaseModel):
             stack_values.append(self.log_cand_entities_scores)
         if self.args.nn_components.find("attention") != -1:
             stack_values.append(self.attention_scores)
+        if self.args.nn_components.find("metotype") != -1:
+            stack_values.append(self.metotype)
         if len(stack_values) == 1:
             # since only one scalar omit the final ffnn
             self.final_scores = stack_values[0]

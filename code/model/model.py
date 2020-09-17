@@ -17,7 +17,7 @@ class Model(BaseModel):
         self.begin_span, self.end_span, self.spans_len,\
         self.cand_entities, self.cand_entities_scores, self.cand_entities_labels,\
         self.cand_entities_len, self.ground_truth, self.ground_truth_len,\
-        self.begin_gm, self.end_gm = next_element
+        self.begin_gm, self.end_gm, self.metotype = next_element
 
         self.begin_span = tf.cast(self.begin_span, tf.int32)
         self.end_span = tf.cast(self.end_span, tf.int32)
@@ -315,6 +315,7 @@ class Model(BaseModel):
 
     def add_cand_ent_scores_op(self):
         self.log_cand_entities_scores = tf.log(tf.minimum(1.0, tf.maximum(self.args.zero, self.cand_entities_scores)))
+
         stack_values = []
         if self.args.nn_components.find("lstm") != -1:
             stack_values.append(self.similarity_scores)
@@ -322,8 +323,10 @@ class Model(BaseModel):
             stack_values.append(self.log_cand_entities_scores)
         if self.args.nn_components.find("attention") != -1:
             stack_values.append(self.attention_scores)
+        if self.args.nn_components.find("metotype") != -1:
+            stack_values.append(self.metotype)
 
-        scalar_predictors = tf.stack(stack_values, 3)
+        scalar_predictors = tf.stack(stack_values, axis=3)
         #print("scalar_predictors = ", scalar_predictors)   # [batch, num_mentions, 30, 3]
 
         with tf.variable_scope("similarity_and_prior_ffnn"):

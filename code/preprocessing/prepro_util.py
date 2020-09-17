@@ -9,7 +9,6 @@ import preprocessing.util as util
 from termcolor import colored
 import tensorflow as tf
 
-
 class VocabularyCounter(object):
     """counts the frequency of each word and each character in the corpus. With each
     file that it processes it increases the counters. So one frequency vocab for all the files
@@ -160,6 +159,7 @@ class Chunker(object):
         self.begin_gm = []          # the starting positions of gold mentions
         self.end_gm = []            # the end positions of gold mentions
         self.ground_truth = []      # list with the correct entity ids
+        self.metotype = []
 
     def compute_result(self, docid):
         chunk_id = docid
@@ -167,7 +167,7 @@ class Chunker(object):
             chunk_id = chunk_id + "&*" + str(self.par_cnt)
         if self.separator == "per_sentence":
             chunk_id = chunk_id + "&*" + str(self.par_cnt) + "&*" + str(self.sent_cnt)
-        result = (chunk_id, self.chunk_words, self.begin_gm, self.end_gm, self.ground_truth)
+        result = (chunk_id, self.chunk_words, self.begin_gm, self.end_gm, self.ground_truth, self.metotype)
 
         # correctness checks. not necessary
         no_errors_flag = True
@@ -214,8 +214,9 @@ class Chunker(object):
                     self.sent_cnt += 1
                     self.chunk_words.append(line)
                 elif line.startswith('MMSTART_'):
-                    ent_id = line[8:]   # assert that ent_id in wiki_name_id_map
+                    ent_id, metotype = line[8:].split('_')   # assert that ent_id in wiki_name_id_map
                     self.ground_truth.append(ent_id)
+                    self.metotype.append(metotype)
                     self.begin_gm.append(len(self.chunk_words))
                 elif line == 'MMEND':
                     self.end_gm.append(len(self.chunk_words))
@@ -233,7 +234,7 @@ class Chunker(object):
 
 GmonlySample = namedtuple("GmonlySample",
                           ["chunk_id", "chunk_words", 'begin_gm', "end_gm",
-                          "ground_truth", "cand_entities", "cand_entities_scores"])
+                          "ground_truth", "cand_entities", "cand_entities_scores", "metotype"])
 AllspansSample = namedtuple("AllspansSample",
                             ["chunk_id", "chunk_words", "begin_spans", "end_spans",
                          "ground_truth", "cand_entities", "cand_entities_scores",
@@ -358,7 +359,7 @@ class SamplesGenerator(object):
             self.fetchFilteredCoreferencedCandEntities.init_coref(el_mode=False)
             cand_entities = []   # list of lists     candidate entities
             cand_entities_scores = []
-            chunk_id, chunk_words, begin_gm, end_gm, ground_truth = chunk
+            chunk_id, chunk_words, begin_gm, end_gm, ground_truth, metotype = chunk
             gm_this_file += len(begin_gm)
             for left, right, gt in zip(begin_gm, end_gm, ground_truth):
                 cand_ent, scores = self.fetchFilteredCoreferencedCandEntities.process(left, right, chunk_words)
@@ -381,7 +382,7 @@ class SamplesGenerator(object):
 
             if begin_gm:  #not emtpy
                 yield GmonlySample(chunk_id, chunk_words, begin_gm, end_gm, ground_truth,
-                                   cand_entities, cand_entities_scores)
+                                   cand_entities, cand_entities_scores, metotype)
 
         if args.calculate_stats:
             print("max_mention_width_violations :", max_mention_width_violations)
@@ -402,7 +403,8 @@ SampleEncoded = namedtuple("SampleEncoded",
                                 "cand_entities", "cand_entities_scores", 'cand_entities_labels',  # lists of lists
                                 'cand_entities_len',  # list
                                 "ground_truth", "ground_truth_len",
-                                'begin_gm', 'end_gm'])  # list
+                                'begin_gm', 'end_gm', # list
+                                'metotype'])
 
 
 class EncoderGenerator(object):
@@ -444,6 +446,7 @@ class EncoderGenerator(object):
             ground_truth_enc = [self._wikiid2nnid[gt] if gt in self._wikiid2nnid else self._wikiid2nnid["<u>"]
                             for gt in sample.ground_truth]
             ground_truth_errors_cnt += ground_truth_enc.count(self._wikiid2nnid["<u>"])   # it is always zero
+            metotype_enc = [[1]*len(ce) if mt == 'MET' else [0]*len(ce) for mt, ce in zip(sample.metotype, sample.cand_entities)]
 
             #print(colored("New sample", 'red'))
             #print(sample)
@@ -464,7 +467,8 @@ class EncoderGenerator(object):
                                     cand_entities_labels=cand_entities_labels,
                                     cand_entities_len=[len(t) for t in cand_entities],
                                     ground_truth=ground_truth_enc, ground_truth_len=len(sample.ground_truth),
-                                    begin_gm=[], end_gm=[])
+                                    begin_gm=[], end_gm=[],
+                                    metotype=metotype_enc)
 
             elif isinstance(sample, AllspansSample):
                 if len(sample.begin_spans) != len(sample.end_spans):
@@ -570,12 +574,19 @@ class TFRecordsGenerator(object):
             number of ements"""
             return tf.train.FeatureList(feature=[_int64list_feature(v) for v in values])
 
+        def _float_feature(value):
+            return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
+
+        def _floatlist_feature(value):
+            """value is a list of integers."""
+            return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
+        def _float_feature_list(values):
+            return tf.train.FeatureList(feature=[_float_feature(v) for v in values])
+
         def _floatlist_feature_list(values):
             """ like the chars = [[0.1,0.2,0.3], [0.4,0.5]] a feature list where each feature can have variable
             number of ements"""
-            def _floatlist_feature(value):
-                """value is a list of integers."""
-                return tf.train.Feature(float_list=tf.train.FloatList(value=value))
             return tf.train.FeatureList(feature=[_floatlist_feature(v) for v in values])
 
         context = tf.train.Features(feature={
@@ -594,7 +605,8 @@ class TFRecordsGenerator(object):
                 "cand_entities_scores": _floatlist_feature_list(sample.cand_entities_scores),
                 "cand_entities_labels": _int64list_feature_list(sample.cand_entities_labels),
                 "cand_entities_len": _int64_feature_list(sample.cand_entities_len),
-                "ground_truth": _int64_feature_list(sample.ground_truth)
+                "ground_truth": _int64_feature_list(sample.ground_truth),
+                "metotype": _floatlist_feature_list(sample.metotype)
         }
         if isinstance(sample, SampleEncoded):
             feature_list["begin_gm"] = _int64_feature_list(sample.begin_gm)
@@ -628,16 +640,17 @@ class TFRecordsGenerator(object):
 
 def create_tfrecords():
     new_dataset_folder = config.base_folder+"data/new_datasets/"
-    datasets = [os.path.basename(os.path.normpath(d)) for d in util.get_immediate_files(new_dataset_folder)]
+    # pick files pertaining to the newly created combo dataset
+    datasets = [d for d in util.get_immediate_files(new_dataset_folder) if 'combo' in d]
     print("datasets: ", datasets)
 
     tfrecords_generator = TFRecordsGenerator()
     tfrecords_generator.set_gmonly_mode()
     for file in datasets:
         tfrecords_generator.process(filepath=new_dataset_folder+file)
-    tfrecords_generator.set_allspans_mode()
-    for file in datasets:
-        tfrecords_generator.process(filepath=new_dataset_folder+file)
+    #tfrecords_generator.set_allspans_mode()
+    #for file in datasets:
+    #    tfrecords_generator.process(filepath=new_dataset_folder+file)
 
 
 class PrintSamples(object):
