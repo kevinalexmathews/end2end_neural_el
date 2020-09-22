@@ -1,8 +1,10 @@
 import argparse
+import random
+random.seed(42)
 import os
 import preprocessing.util as util
 
-def process_aida(in_filepath, out_filepath, metotype='LIT'):
+def process_aida(in_filepath, out_filepath, add_noise, noise_type, metotype='LIT'):
 
     # _, wiki_id_name_map = util.load_wiki_name_id_map(lowercase=False)
     #_, wiki_id_name_map = util.entity_name_id_map_from_dump()
@@ -50,6 +52,8 @@ def process_aida(in_filepath, out_filepath, metotype='LIT'):
                     fout.write("MMSTART_"+new_ent_id+"\n")   # TODO check here if entity id is inside my wikidump
                                                    # if not then omit this mention
                     fout.write(l[0]+"\n")  # write the word
+                    if add_noise and noise_type=='distort_labels':
+                        metotype = random.choice(['LIT', 'MET'])
                     cur_sample.append("MMSTART_"+new_ent_id+"_"+metotype+"\n")
                     cur_sample.append(l[0]+"\n")
                     in_mention = True

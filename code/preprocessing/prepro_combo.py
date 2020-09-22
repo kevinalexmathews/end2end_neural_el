@@ -1,12 +1,12 @@
 import argparse
 import os
 import random
+random.seed(42)
 import preprocessing.util as util
 from preprocessing.prepro_aida import process_aida
 from preprocessing.prepro_aida import create_necessary_folders
 from preprocessing.prepro_aida import split_dev_test
 from preprocessing.prepro_wimcor import process_wimcor
-random.seed(42)
 
 def _parse_args():
     parser = argparse.ArgumentParser()
@@ -20,9 +20,18 @@ def _parse_args():
                         type=float,
                         default=0.7,
                         help="ratio for split for train; rest is equally divided into dev and test")
+    parser.add_argument("--add_noise",
+                        type=bool,
+                        default=False,
+                        help="add noise to dataset or not; for analysis")
+    parser.add_argument("--noise_type",
+                        type=str,
+                        default="distort_labels",
+                        help="valid only if add_noise=True")
     return parser.parse_args()
 
 def write_to_file(samples, fpath):
+    print('writing to {}'.format(fpath))
     with open(fpath, 'w') as fout:
         for sample in samples:
             for item in sample:
@@ -41,7 +50,9 @@ if __name__ == "__main__":
     split_dev_test(args.aida_folder+"testa_testb_aggregate_original", args.output_folder)
     aida_samples = process_aida(args.output_folder+"temp_aida_dev",
                                 args.output_folder+"aida_dev_out_temp.txt",
-                                metotype='LIT')
+                                args.add_noise, args.noise_type,
+                                metotype='LIT',
+                                )
     os.remove(args.output_folder + "temp_aida_dev")
     os.remove(args.output_folder + "temp_aida_test")
     os.remove(args.output_folder + "aida_dev_out_temp.txt")
@@ -49,7 +60,9 @@ if __name__ == "__main__":
     # get WiMCor samples
     wimcor_samples = process_wimcor(args.wimcor_folder+"wimcor_positive.xml",
                                     args.output_folder+"wimcor_positive_out_temp.txt",
-                                    metotype='MET')
+                                    args.add_noise, args.noise_type,
+                                    metotype='MET',
+                                    )
     os.remove(args.output_folder + "wimcor_positive_out_temp.txt")
 
     # merge and randomly shuffle
@@ -68,7 +81,13 @@ if __name__ == "__main__":
                                                 len(combo_samples_test)))
 
     # write the partitions to file
-    write_to_file(combo_samples_train, args.output_folder+"combo_train.txt")
-    write_to_file(combo_samples_dev, args.output_folder+"combo_dev.txt")
-    write_to_file(combo_samples_test, args.output_folder+"combo_test.txt")
+    if args.add_noise and args.noise_type=='distort_labels':
+        write_to_file(combo_samples_train, args.output_folder+"combo"+"_labelsdistorted"+"_train.txt")
+        write_to_file(combo_samples_dev, args.output_folder+"combo"+"_labelsdistorted"+"_dev.txt")
+        write_to_file(combo_samples_test, args.output_folder+"combo"+"_labelsdistorted"+"_test.txt")
+    elif not args.add_noise:
+        # no perturbation; data as is;
+        write_to_file(combo_samples_train, args.output_folder+"combo_train.txt")
+        write_to_file(combo_samples_dev, args.output_folder+"combo_dev.txt")
+        write_to_file(combo_samples_test, args.output_folder+"combo_test.txt")
 

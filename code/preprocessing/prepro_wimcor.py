@@ -1,4 +1,6 @@
 import argparse
+import random
+random.seed(42)
 from bs4 import BeautifulSoup
 from spacy.lang.en import English
 import preprocessing.util as util
@@ -9,7 +11,7 @@ def find(lst, key, value):
             return i
     return -1
 
-def process_wimcor(in_filepath, out_filepath, metotype='MET'):
+def process_wimcor(in_filepath, out_filepath, add_noise, noise_type, metotype='MET'):
     with open(in_filepath) as fin:
         content = fin.read()
     soup = BeautifulSoup(content, 'lxml')
@@ -41,6 +43,8 @@ def process_wimcor(in_filepath, out_filepath, metotype='MET'):
                     ent_id = entityNameIdMap.compatible_ent_id(wiki_title)
                     if ent_id is not None:
                         fout.write('MMSTART_{}\n'.format(ent_id))
+                        if add_noise and noise_type=='distort_labels':
+                            metotype = random.choice(['LIT', 'MET'])
                         cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 
                         in_pmw = True
