@@ -9,7 +9,7 @@ def find(lst, key, value):
             return i
     return -1
 
-def process_wimcor(in_filepath, out_filepath, metotype=''):
+def process_wimcor(in_filepath, out_filepath, metotype='MET'):
     with open(in_filepath) as fin:
         content = fin.read()
     soup = BeautifulSoup(content, 'lxml')

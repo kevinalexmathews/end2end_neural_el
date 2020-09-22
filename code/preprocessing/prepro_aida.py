@@ -2,7 +2,7 @@ import argparse
 import os
 import preprocessing.util as util
 
-def process_aida(in_filepath, out_filepath):
+def process_aida(in_filepath, out_filepath, metotype='LIT'):
 
     # _, wiki_id_name_map = util.load_wiki_name_id_map(lowercase=False)
     #_, wiki_id_name_map = util.entity_name_id_map_from_dump()
@@ -50,7 +50,7 @@ def process_aida(in_filepath, out_filepath):
                     fout.write("MMSTART_"+new_ent_id+"\n")   # TODO check here if entity id is inside my wikidump
                                                    # if not then omit this mention
                     fout.write(l[0]+"\n")  # write the word
-                    cur_sample.append("MMSTART_"+new_ent_id+"_LIT"+"\n")
+                    cur_sample.append("MMSTART_"+new_ent_id+"_"+metotype+"\n")
                     cur_sample.append(l[0]+"\n")
                     in_mention = True
                 else:

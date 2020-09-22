@@ -6,6 +6,7 @@ from preprocessing.prepro_aida import process_aida
 from preprocessing.prepro_aida import create_necessary_folders
 from preprocessing.prepro_aida import split_dev_test
 from preprocessing.prepro_wimcor import process_wimcor
+random.seed(42)
 
 def _parse_args():
     parser = argparse.ArgumentParser()
@@ -39,7 +40,8 @@ if __name__ == "__main__":
     # get AIDA samples
     split_dev_test(args.aida_folder+"testa_testb_aggregate_original", args.output_folder)
     aida_samples = process_aida(args.output_folder+"temp_aida_dev",
-                                args.output_folder+"aida_dev_out_temp.txt")
+                                args.output_folder+"aida_dev_out_temp.txt",
+                                metotype='LIT')
     os.remove(args.output_folder + "temp_aida_dev")
     os.remove(args.output_folder + "temp_aida_test")
     os.remove(args.output_folder + "aida_dev_out_temp.txt")
