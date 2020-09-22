@@ -9,10 +9,16 @@ from preprocessing.prepro_wimcor import process_wimcor
 
 def _parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--aida_folder", default="../data/basic_data/test_datasets/AIDA/")
-    parser.add_argument("--wimcor_folder", default="../data/basic_data/test_datasets/WiMCor/")
-    parser.add_argument("--output_folder", default="../data/new_datasets/")
-    parser.add_argument("--split_ratio", type=float, default=0.7, help="ratio for split")
+    parser.add_argument("--aida_folder",
+                        default="../data/basic_data/test_datasets/AIDA/")
+    parser.add_argument("--wimcor_folder",
+                        default="../data/basic_data/test_datasets/WiMCor/")
+    parser.add_argument("--output_folder",
+                        default="../data/new_datasets/")
+    parser.add_argument("--split_ratio",
+                        type=float,
+                        default=0.7,
+                        help="ratio for split for train; rest is equally divided into dev and test")
     return parser.parse_args()
 
 def write_to_file(samples, fpath):
@@ -27,6 +33,7 @@ if __name__ == "__main__":
     to train and test a metonymy-aware entity linking system.
     '''
     args = _parse_args()
+    print(args)
     create_necessary_folders(args.output_folder)
 
     # get AIDA samples
@@ -47,11 +54,19 @@ if __name__ == "__main__":
     combo_samples = aida_samples + wimcor_samples
     random.shuffle(combo_samples)
 
-    # split the combo in train and test partition
+    # split the combo in train, dev and test partition
     combo_samples_train = combo_samples[:int(args.split_ratio*len(combo_samples))]
-    combo_samples_test = combo_samples[int(args.split_ratio*len(combo_samples)):]
+    combo_samples_rest = combo_samples[int(args.split_ratio*len(combo_samples)):]
+
+    combo_samples_dev = combo_samples_rest[:len(combo_samples_rest)//2]
+    combo_samples_test = combo_samples_rest[len(combo_samples_rest)//2:]
+
+    print('Train: {}; Dev: {}; Test: {}'.format(len(combo_samples_train),
+                                                len(combo_samples_dev),
+                                                len(combo_samples_test)))
 
     # write the partitions to file
     write_to_file(combo_samples_train, args.output_folder+"combo_train.txt")
+    write_to_file(combo_samples_dev, args.output_folder+"combo_dev.txt")
     write_to_file(combo_samples_test, args.output_folder+"combo_test.txt")
 
