@@ -27,7 +27,7 @@ def _parse_args():
     parser.add_argument("--noise_type",
                         type=str,
                         default="distort_meto_labels",
-                        help="valid only if add_noise=True")
+                        help="valid only if add_noise=True; distort_meto_labels OR distort_el_labels;")
     return parser.parse_args()
 
 def write_to_file(samples, fpath):
@@ -85,6 +85,10 @@ if __name__ == "__main__":
         write_to_file(combo_samples_train, args.output_folder+"combo"+"_metolabelsdistorted"+"_train.txt")
         write_to_file(combo_samples_dev, args.output_folder+"combo"+"_metolabelsdistorted"+"_dev.txt")
         write_to_file(combo_samples_test, args.output_folder+"combo"+"_metolabelsdistorted"+"_test.txt")
+    if args.add_noise and args.noise_type=='distort_el_labels':
+        write_to_file(combo_samples_train, args.output_folder+"combo"+"_ellabelsdistorted"+"_train.txt")
+        write_to_file(combo_samples_dev, args.output_folder+"combo"+"_ellabelsdistorted"+"_dev.txt")
+        write_to_file(combo_samples_test, args.output_folder+"combo"+"_ellabelsdistorted"+"_test.txt")
     elif not args.add_noise:
         # no perturbation; data as is;
         write_to_file(combo_samples_train, args.output_folder+"combo_train.txt")

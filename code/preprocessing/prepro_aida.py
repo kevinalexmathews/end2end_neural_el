@@ -10,6 +10,7 @@ def process_aida(in_filepath, out_filepath, add_noise, noise_type, metotype='LIT
     #_, wiki_id_name_map = util.entity_name_id_map_from_dump()
     entityNameIdMap = util.EntityNameIdMap()
     entityNameIdMap.init_compatible_ent_id()
+    name_id_map_items = list(entityNameIdMap.wiki_name_id_map.items())
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
     ent_id_changes = 0
 
@@ -54,6 +55,8 @@ def process_aida(in_filepath, out_filepath, add_noise, noise_type, metotype='LIT
                     fout.write(l[0]+"\n")  # write the word
                     if add_noise and noise_type=='distort_meto_labels':
                         metotype = random.choice(['LIT', 'MET'])
+                    elif add_noise and noise_type=='distort_el_labels':
+                        new_ent_id = random.choice(name_id_map_items)[1]
                     cur_sample.append("MMSTART_"+new_ent_id+"_"+metotype+"\n")
                     cur_sample.append(l[0]+"\n")
                     in_mention = True

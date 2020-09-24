@@ -20,6 +20,7 @@ def process_wimcor(in_filepath, out_filepath, add_noise, noise_type, metotype='M
 
     entityNameIdMap = util.EntityNameIdMap()
     entityNameIdMap.init_compatible_ent_id()
+    name_id_map_items = list(entityNameIdMap.wiki_name_id_map.items())
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
 
     samples = []
@@ -45,6 +46,8 @@ def process_wimcor(in_filepath, out_filepath, add_noise, noise_type, metotype='M
                         fout.write('MMSTART_{}\n'.format(ent_id))
                         if add_noise and noise_type=='distort_meto_labels':
                             metotype = random.choice(['LIT', 'MET'])
+                        elif add_noise and noise_type=='distort_el_labels':
+                            ent_id = random.choice(name_id_map_items)[1]
                         cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 
                         in_pmw = True
