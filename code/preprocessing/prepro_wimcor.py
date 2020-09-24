@@ -43,7 +43,7 @@ def process_wimcor(in_filepath, out_filepath, add_noise, noise_type, metotype='M
                     ent_id = entityNameIdMap.compatible_ent_id(wiki_title)
                     if ent_id is not None:
                         fout.write('MMSTART_{}\n'.format(ent_id))
-                        if add_noise and noise_type=='distort_labels':
+                        if add_noise and noise_type=='distort_meto_labels':
                             metotype = random.choice(['LIT', 'MET'])
                         cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 

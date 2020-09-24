@@ -52,7 +52,7 @@ def process_aida(in_filepath, out_filepath, add_noise, noise_type, metotype='LIT
                     fout.write("MMSTART_"+new_ent_id+"\n")   # TODO check here if entity id is inside my wikidump
                                                    # if not then omit this mention
                     fout.write(l[0]+"\n")  # write the word
-                    if add_noise and noise_type=='distort_labels':
+                    if add_noise and noise_type=='distort_meto_labels':
                         metotype = random.choice(['LIT', 'MET'])
                     cur_sample.append("MMSTART_"+new_ent_id+"_"+metotype+"\n")
                     cur_sample.append(l[0]+"\n")
