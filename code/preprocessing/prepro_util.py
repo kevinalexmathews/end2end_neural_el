@@ -640,8 +640,8 @@ class TFRecordsGenerator(object):
 
 def create_tfrecords():
     new_dataset_folder = config.base_folder+"data/new_datasets/"
-    # pick files pertaining to the newly created combo dataset
-    datasets = [d for d in util.get_immediate_files(new_dataset_folder) if 'combo' in d]
+    # pick files pertaining to the newly created combo or aida dataset
+    datasets = [d for d in util.get_immediate_files(new_dataset_folder) if 'combo' in d or 'aida' in d]
     print("datasets: ", datasets)
 
     tfrecords_generator = TFRecordsGenerator()

@@ -6,6 +6,7 @@ import preprocessing.util as util
 from preprocessing.prepro_aida import process_aida
 from preprocessing.prepro_aida import create_necessary_folders
 from preprocessing.prepro_aida import split_dev_test
+from preprocessing.prepro_aida import write_to_file
 from preprocessing.prepro_wimcor import process_wimcor
 
 def _parse_args():
@@ -30,13 +31,6 @@ def _parse_args():
                         help="valid only if add_noise=True; distort_meto_labels OR distort_el_labels;")
     return parser.parse_args()
 
-def write_to_file(samples, fpath):
-    print('writing to {}'.format(fpath))
-    with open(fpath, 'w') as fout:
-        for sample in samples:
-            for item in sample:
-                fout.write(item)
-
 if __name__ == "__main__":
     '''
     This script creates a dataset that combines samples from AIDA and WiMCor
@@ -49,21 +43,17 @@ if __name__ == "__main__":
     # get AIDA samples
     split_dev_test(args.aida_folder+"testa_testb_aggregate_original", args.output_folder)
     aida_samples = process_aida(args.output_folder+"temp_aida_dev",
-                                args.output_folder+"aida_dev_out_temp.txt",
                                 args.add_noise, args.noise_type,
                                 metotype='LIT',
                                 )
     os.remove(args.output_folder + "temp_aida_dev")
     os.remove(args.output_folder + "temp_aida_test")
-    os.remove(args.output_folder + "aida_dev_out_temp.txt")
 
     # get WiMCor samples
     wimcor_samples = process_wimcor(args.wimcor_folder+"wimcor_positive.xml",
-                                    args.output_folder+"wimcor_positive_out_temp.txt",
                                     args.add_noise, args.noise_type,
                                     metotype='MET',
                                     )
-    os.remove(args.output_folder + "wimcor_positive_out_temp.txt")
 
     # merge and randomly shuffle
     combo_samples = aida_samples + wimcor_samples
