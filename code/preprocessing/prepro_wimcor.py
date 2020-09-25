@@ -2,6 +2,7 @@ import argparse
 import random
 random.seed(42)
 from bs4 import BeautifulSoup
+import spacy
 from spacy.lang.en import English
 import preprocessing.util as util
 from preprocessing.prepro_aida import write_to_file
@@ -18,6 +19,7 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
     soup = BeautifulSoup(content, 'lxml')
 
     spacy_tokenizer = English(parser=False)
+    vocabulary = list(spacy.load('en_core_web_sm').vocab.strings)
 
     entityNameIdMap = util.EntityNameIdMap()
     entityNameIdMap.init_compatible_ent_id()
@@ -26,6 +28,7 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
 
     samples = []
     for idx, item in enumerate(soup.find_all('sample')):
+        inserted_already = False
         cur_sample = []
         cur_sample.append('DOCSTART_{}\n'.format(idx))
 
@@ -46,6 +49,11 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
                         metotype = random.choice(['LIT', 'MET'])
                     elif add_noise and noise_type=='distort_el_labels':
                         ent_id = random.choice(name_id_map_items)[1]
+                    elif add_noise and noise_type=='insert_random_token_before_MMSTART' and not inserted_already:
+                        random_word = random.choice(vocabulary)
+                        print(random_word)
+                        cur_sample.append('{}\n'.format(random_word))
+                        inserted_already = True
                     cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 
                     in_pmw = True

@@ -2,6 +2,7 @@ import argparse
 import random
 random.seed(42)
 import os
+import spacy
 import preprocessing.util as util
 
 def process_aida(in_filepath, add_noise=None, noise_type=None, metotype='LIT'):
@@ -10,6 +11,7 @@ def process_aida(in_filepath, add_noise=None, noise_type=None, metotype='LIT'):
     #_, wiki_id_name_map = util.entity_name_id_map_from_dump()
     entityNameIdMap = util.EntityNameIdMap()
     entityNameIdMap.init_compatible_ent_id()
+    vocabulary = list(spacy.load('en_core_web_sm').vocab.strings)
     name_id_map_items = list(entityNameIdMap.wiki_name_id_map.items())
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
     ent_id_changes = 0
@@ -18,6 +20,7 @@ def process_aida(in_filepath, add_noise=None, noise_type=None, metotype='LIT'):
     with open(in_filepath) as fin:
         in_mention = False   # am i inside a mention span or not
         first_document = True
+        inserted_already = False
         cur_sample = []
         for line in fin:
             l = line.split('\t')
@@ -31,6 +34,7 @@ def process_aida(in_filepath, add_noise=None, noise_type=None, metotype='LIT'):
                 if not first_document:
                     cur_sample.append("DOCEND\n")
                     samples.append(cur_sample)
+                    inserted_already = False
                     cur_sample = []
                 # line = "-DOCSTART- (967testa ATHLETICS)\n"
                 doc_title = line[len("-DOCSTART- ("): -2]
@@ -50,6 +54,11 @@ def process_aida(in_filepath, add_noise=None, noise_type=None, metotype='LIT'):
                         metotype = random.choice(['LIT', 'MET'])
                     elif add_noise and noise_type=='distort_el_labels':
                         new_ent_id = random.choice(name_id_map_items)[1]
+                    elif add_noise and noise_type=='insert_random_token_before_MMSTART' and not inserted_already:
+                        random_word = random.choice(vocabulary)
+                        print(random_word)
+                        cur_sample.append('{}\n'.format(random_word))
+                        inserted_already = True
                     cur_sample.append("MMSTART_"+new_ent_id+"_"+metotype+"\n")    # TODO check here if entity id is inside my wikidump
                                                    # if not then omit this mention
                     cur_sample.append(l[0]+"\n")  # write the word
