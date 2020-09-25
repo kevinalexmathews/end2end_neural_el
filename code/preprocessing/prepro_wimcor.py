@@ -6,6 +6,7 @@ import spacy
 from spacy.lang.en import English
 import preprocessing.util as util
 from preprocessing.prepro_aida import write_to_file
+from preprocessing.prepro_aida import create_necessary_folders
 
 def find(lst, key, value):
     for i, dic in enumerate(lst):
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     parser.add_argument("--wimcor_folder", default="../data/basic_data/test_datasets/WiMCor/")
     parser.add_argument("--output_folder", default="../data/new_datasets/")
     args = parser.parse_args()
+    create_necessary_folders(args.output_folder)
 
     samples = process_wimcor(args.wimcor_folder+"wimcor_positive.xml")
     write_to_file(samples, args.output_folder+"wimcor_positive.txt")

@@ -1,7 +1,6 @@
 import argparse
 import os
 import random
-random.seed(42)
 import preprocessing.util as util
 from preprocessing.prepro_aida import process_aida
 from preprocessing.prepro_aida import create_necessary_folders
@@ -57,7 +56,7 @@ if __name__ == "__main__":
 
     # merge and randomly shuffle
     combo_samples = aida_samples + wimcor_samples
-    random.shuffle(combo_samples)
+    random.Random(42).shuffle(combo_samples)
 
     # split the combo in train, dev and test partition
     combo_samples_train = combo_samples[:int(args.split_ratio*len(combo_samples))]
