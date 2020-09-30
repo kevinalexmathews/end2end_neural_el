@@ -50,11 +50,6 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
                         metotype = random.choice(['LIT', 'MET'])
                     elif add_noise and noise_type=='distort_el_labels':
                         ent_id = random.choice(name_id_map_items)[1]
-                    elif add_noise and noise_type=='insert_random_token_before_MMSTART' and not inserted_already:
-                        random_word = random.choice(vocabulary)
-                        print(random_word)
-                        cur_sample.append('{}\n'.format(random_word))
-                        inserted_already = True
                     cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 
                     in_pmw = True
@@ -66,9 +61,17 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
                 in_pmw = False
 
                 cur_sample.append('MMEND\n')
+                if add_noise and noise_type=='distort_context':
+                    cur_sample.append('{}\n'.format(random.choice(vocabulary)))
+                else:
+                    cur_sample.append('{}\n'.format(token))
+            elif in_pmw and ctr != 0:
                 cur_sample.append('{}\n'.format(token))
             else:
-                cur_sample.append('{}\n'.format(token))
+                if add_noise and noise_type=='distort_context':
+                    cur_sample.append('{}\n'.format(random.choice(vocabulary)))
+                else:
+                    cur_sample.append('{}\n'.format(token))
 
             ctr -= 1
 
