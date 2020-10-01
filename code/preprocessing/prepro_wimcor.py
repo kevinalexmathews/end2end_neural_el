@@ -28,10 +28,10 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
 
     samples = []
-    for idx, item in enumerate(soup.find_all('sample')):
+    for sample_idx, item in enumerate(soup.find_all('sample')):
         inserted_already = False
         cur_sample = []
-        cur_sample.append('DOCSTART_{}\n'.format(idx))
+        cur_sample.append('DOCSTART_{}\n'.format(sample_idx))
 
         lcontext = str(item.find('pmw').previous_sibling) if item.find('pmw').previous_sibling else ""
         pmw = item.find('pmw').text
@@ -41,8 +41,8 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
 
         ctr = 0
         in_pmw = False
-        for idx, token in enumerate(spacy_tokenizer(sample)):
-            if idx == loc_pmw:
+        for token_idx, token in enumerate(spacy_tokenizer(sample)):
+            if token_idx == loc_pmw:
                 wiki_title = item.find('pmw')['fine']
                 ent_id = entityNameIdMap.compatible_ent_id(wiki_title)
                 if ent_id is not None:
