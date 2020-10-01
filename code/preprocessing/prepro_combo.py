@@ -21,13 +21,19 @@ def _parse_args():
                         default=0.7,
                         help="ratio for split for train; rest is equally divided into dev and test")
     parser.add_argument("--add_noise",
-                        type=bool,
-                        default=False,
+                        dest='add_noise',
+                        action='store_true',
+                        help="add noise to dataset or not; for analysis")
+    parser.add_argument("--no_add_noise",
+                        dest='add_noise',
+                        action='store_false',
                         help="add noise to dataset or not; for analysis")
     parser.add_argument("--noise_type",
                         type=str,
                         default="distort_meto_labels",
-                        help="valid only if add_noise=True; distort_meto_labels OR distort_el_labels or distort_context;")
+                        help="valid only if add_noise=True; \
+                        distort_meto_labels OR distort_el_labels OR distort_context;")
+    parser.set_defaults(add_noise=False)
     return parser.parse_args()
 
 if __name__ == "__main__":
