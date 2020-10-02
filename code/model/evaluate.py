@@ -228,5 +228,7 @@ if __name__ == "__main__":
                          args.experiment_name+"/", args.predictions_folder, args.entity_extension,
                                             args.gm_bucketing_pempos, args.print_global_voters,
                                             args.print_global_pairwise_scores)
+    from model.util import Tee
+    tee = Tee(args.output_folder+'evaluate-log.txt', 'a')
     evaluate()
 

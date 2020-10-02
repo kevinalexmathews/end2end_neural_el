@@ -501,7 +501,7 @@ if __name__ == "__main__":
     print(args)
     log_args(args.output_folder+"train_args.txt")
     from model.util import Tee
-    tee = Tee(args.output_folder+'log.txt', 'a')
+    tee = Tee(args.output_folder+'train-log.txt', 'a')
     try:
         train()
     except KeyboardInterrupt:
