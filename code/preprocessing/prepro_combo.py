@@ -33,6 +33,15 @@ def _parse_args():
                         default="distort_meto_labels",
                         help="valid only if add_noise=True; \
                         distort_meto_labels OR distort_el_labels OR distort_context;")
+    parser.add_argument("--reorder_samples",
+                        dest='reorder_samples',
+                        action='store_true',
+                        help="create partitions so that dev and test have unseen entities")
+    parser.add_argument("--no_reorder_samples",
+                        dest='reorder_samples',
+                        action='store_false',
+                        help="create partitions so that dev and test have unseen entities")
+    parser.set_defaults(reorder_samples=True)
     parser.set_defaults(add_noise=False)
     return parser.parse_args()
 
@@ -55,18 +64,27 @@ if __name__ == "__main__":
     os.remove(args.output_folder + "temp_aida_test")
 
     # get WiMCor samples
-    wimcor_samples = process_wimcor(args.wimcor_folder+"wimcor_positive.xml",
-                                    args.add_noise, args.noise_type,
-                                    metotype='MET',
-                                    )
+    wimcor_samples, ent_id_indices = process_wimcor(args.wimcor_folder+"wimcor_positive.xml",
+                                                    args.add_noise, args.noise_type,
+                                                    metotype='MET',)
 
-    # merge and randomly shuffle
-    combo_samples = aida_samples + wimcor_samples
-    random.Random(42).shuffle(combo_samples)
+    # reorder WiMCor samples according to entity ids
+    if args.reorder_samples:
+        reordered_wimcor_samples = []
+        for ent_id in ent_id_indices.keys():
+            for idx in ent_id_indices[ent_id]:
+                reordered_wimcor_samples.append(wimcor_samples[idx])
+        wimcor_samples = reordered_wimcor_samples
 
-    # split the combo in train, dev and test partition
-    combo_samples_train = combo_samples[:int(args.split_ratio*len(combo_samples))]
-    combo_samples_rest = combo_samples[int(args.split_ratio*len(combo_samples)):]
+    # split the data into train, dev and test partitions
+    combo_samples_train = aida_samples[:int(args.split_ratio*len(aida_samples))] + \
+                            wimcor_samples[:int(args.split_ratio*len(wimcor_samples))]
+    combo_samples_rest = aida_samples[int(args.split_ratio*len(aida_samples)):] + \
+                            wimcor_samples[int(args.split_ratio*len(wimcor_samples)):]
+    # shuffle the data; use seed to ensure reproducibility
+    random.seed(42)
+    random.shuffle(combo_samples_train)
+    random.shuffle(combo_samples_rest)
 
     combo_samples_dev = combo_samples_rest[:len(combo_samples_rest)//2]
     combo_samples_test = combo_samples_rest[len(combo_samples_rest)//2:]
@@ -76,21 +94,33 @@ if __name__ == "__main__":
                                                 len(combo_samples_test)))
 
     # write the partitions to file
+    is_reordered = '_reordered' if args.reorder_samples else ''
     if args.add_noise and args.noise_type=='distort_meto_labels':
-        write_to_file(combo_samples_train, args.output_folder+"combo"+"_metolabelsdistorted"+"_train.txt")
-        write_to_file(combo_samples_dev, args.output_folder+"combo"+"_metolabelsdistorted"+"_dev.txt")
-        write_to_file(combo_samples_test, args.output_folder+"combo"+"_metolabelsdistorted"+"_test.txt")
+        write_to_file(combo_samples_train,
+                      args.output_folder+"combo"+is_reordered+"_metolabelsdistorted"+"_train.txt")
+        write_to_file(combo_samples_dev,
+                      args.output_folder+"combo"+is_reordered+"_metolabelsdistorted"+"_dev.txt")
+        write_to_file(combo_samples_test,
+                      args.output_folder+"combo"+is_reordered+"_metolabelsdistorted"+"_test.txt")
     elif args.add_noise and args.noise_type=='distort_el_labels':
-        write_to_file(combo_samples_train, args.output_folder+"combo"+"_ellabelsdistorted"+"_train.txt")
-        write_to_file(combo_samples_dev, args.output_folder+"combo"+"_ellabelsdistorted"+"_dev.txt")
-        write_to_file(combo_samples_test, args.output_folder+"combo"+"_ellabelsdistorted"+"_test.txt")
+        write_to_file(combo_samples_train,
+                      args.output_folder+"combo"+is_reordered+"_ellabelsdistorted"+"_train.txt")
+        write_to_file(combo_samples_dev,
+                      args.output_folder+"combo"+is_reordered+"_ellabelsdistorted"+"_dev.txt")
+        write_to_file(combo_samples_test,
+                      args.output_folder+"combo"+is_reordered+"_ellabelsdistorted"+"_test.txt")
     elif args.add_noise and args.noise_type=='distort_context':
-        write_to_file(combo_samples_train, args.output_folder+"combo"+"_contextdistorted"+"_train.txt")
-        write_to_file(combo_samples_dev, args.output_folder+"combo"+"_contextdistorted"+"_dev.txt")
-        write_to_file(combo_samples_test, args.output_folder+"combo"+"_contextdistorted"+"_test.txt")
+        write_to_file(combo_samples_train,
+                      args.output_folder+"combo"+is_reordered+"_contextdistorted"+"_train.txt")
+        write_to_file(combo_samples_dev,
+                      args.output_folder+"combo"+is_reordered+"_contextdistorted"+"_dev.txt")
+        write_to_file(combo_samples_test,
+                      args.output_folder+"combo"+is_reordered+"_contextdistorted"+"_test.txt")
     elif not args.add_noise:
         # no perturbation; data as is;
-        write_to_file(combo_samples_train, args.output_folder+"combo_train.txt")
-        write_to_file(combo_samples_dev, args.output_folder+"combo_dev.txt")
-        write_to_file(combo_samples_test, args.output_folder+"combo_test.txt")
-
+        write_to_file(combo_samples_train,
+                      args.output_folder+"combo"+is_reordered+"_train.txt")
+        write_to_file(combo_samples_dev,
+                      args.output_folder+"combo"+is_reordered+"_dev.txt")
+        write_to_file(combo_samples_test,
+                      args.output_folder+"combo"+is_reordered+"_test.txt")

@@ -28,6 +28,7 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
     unknown_gt_ids = 0   # counter of ground truth entity ids that are not in the wiki_name_id.txt
 
     samples = []
+    ent_id_indices = {}
     for sample_idx, item in enumerate(soup.find_all('sample')):
         inserted_already = False
         cur_sample = []
@@ -50,6 +51,12 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
                         metotype = random.choice(['LIT', 'MET'])
                     elif add_noise and noise_type=='distort_el_labels':
                         ent_id = random.choice(name_id_map_items)[1]
+
+                    if ent_id not in ent_id_indices.keys():
+                        ent_id_indices[ent_id] = [sample_idx]
+                    else:
+                        ent_id_indices[ent_id].append(sample_idx)
+
                     cur_sample.append('MMSTART_{}_{}\n'.format(ent_id, metotype))
 
                     in_pmw = True
@@ -80,7 +87,7 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
         samples.append(cur_sample)
     print("process_wimcor    unknown_gt_ids: ", unknown_gt_ids)
 
-    return samples
+    return samples, ent_id_indices
 
 if __name__ == "__main__":
     '''
