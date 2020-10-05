@@ -41,8 +41,17 @@ def _parse_args():
                         dest='reorder_samples',
                         action='store_false',
                         help="create partitions so that dev and test have unseen entities")
+    parser.add_argument("--strict_reordering",
+                        dest='strict_reordering',
+                        action='store_true',
+                        help="enable strict reordering or not")
+    parser.add_argument("--no_strict_reordering",
+                        dest='strict_reordering',
+                        action='store_false',
+                        help="enable strict reordering or not")
     parser.set_defaults(reorder_samples=True)
     parser.set_defaults(add_noise=False)
+    parser.set_defaults(strict_reordering=True)
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -77,24 +86,47 @@ if __name__ == "__main__":
         wimcor_samples = reordered_wimcor_samples
 
     # split the data into train, dev and test partitions
-    combo_samples_train = aida_samples[:int(args.split_ratio*len(aida_samples))] + \
-                            wimcor_samples[:int(args.split_ratio*len(wimcor_samples))]
-    combo_samples_rest = aida_samples[int(args.split_ratio*len(aida_samples)):] + \
-                            wimcor_samples[int(args.split_ratio*len(wimcor_samples)):]
-    # shuffle the data; use seed to ensure reproducibility
-    random.seed(42)
-    random.shuffle(combo_samples_train)
-    random.shuffle(combo_samples_rest)
+    if args.strict_reordering:
+        # unseen entities in dev and test; harder version
+        combo_samples_train = aida_samples[:int(args.split_ratio*len(aida_samples))] + \
+                                wimcor_samples[:int(args.split_ratio*len(wimcor_samples))]
+        combo_samples_dev = aida_samples[int(args.split_ratio*len(aida_samples)):int(args.split_ratio*len(aida_samples))+int((1-args.split_ratio)*len(aida_samples)//2)] + \
+                                wimcor_samples[int(args.split_ratio*len(wimcor_samples)):int(args.split_ratio*len(wimcor_samples))+int((1-args.split_ratio)*len(wimcor_samples)//2)]
+        combo_samples_test = aida_samples[int(args.split_ratio*len(aida_samples))+int((1-args.split_ratio)*len(aida_samples)//2):] + \
+                                wimcor_samples[int(args.split_ratio*len(wimcor_samples))+int((1-args.split_ratio)*len(wimcor_samples)//2):]
 
-    combo_samples_dev = combo_samples_rest[:len(combo_samples_rest)//2]
-    combo_samples_test = combo_samples_rest[len(combo_samples_rest)//2:]
+        # shuffle the data; use seed to ensure reproducibility
+        random.seed(42)
+        random.shuffle(combo_samples_train)
+        random.shuffle(combo_samples_dev)
+        random.shuffle(combo_samples_test)
+    else:
+        # similar entities in dev and test;
+        combo_samples_train = aida_samples[:int(args.split_ratio*len(aida_samples))] + \
+                                wimcor_samples[:int(args.split_ratio*len(wimcor_samples))]
+        combo_samples_rest = aida_samples[int(args.split_ratio*len(aida_samples)):] + \
+                                wimcor_samples[int(args.split_ratio*len(wimcor_samples)):]
+
+            # shuffle the data; use seed to ensure reproducibility
+        random.seed(42)
+        random.shuffle(combo_samples_train)
+        random.shuffle(combo_samples_rest)
+
+        combo_samples_dev = combo_samples_rest[:len(combo_samples_rest)//2]
+        combo_samples_test = combo_samples_rest[len(combo_samples_rest)//2:]
 
     print('Train: {}; Dev: {}; Test: {}'.format(len(combo_samples_train),
                                                 len(combo_samples_dev),
                                                 len(combo_samples_test)))
 
     # write the partitions to file
-    is_reordered = '_reordered' if args.reorder_samples else ''
+    if args.reorder_samples and args.strict_reordering:
+        is_reordered = '_strictreordered'
+    elif args.reorder_samples and not args.strict_reordering:
+        is_reordered = '_reordered'
+    elif not args.reorder_samples and not args.strict_reordering:
+        is_reordered = ''
+
     if args.add_noise and args.noise_type=='distort_meto_labels':
         write_to_file(combo_samples_train,
                       args.output_folder+"combo"+is_reordered+"_metolabelsdistorted"+"_train.txt")
