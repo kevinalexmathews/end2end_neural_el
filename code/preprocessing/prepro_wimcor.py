@@ -44,7 +44,12 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
         in_pmw = False
         for token_idx, token in enumerate(spacy_tokenizer(sample)):
             if token_idx == loc_pmw:
-                wiki_title = item.find('pmw')['fine']
+                try:
+                    # for wimcor positive samples
+                    wiki_title = item.find('pmw')['fine']
+                except KeyError:
+                    # for wimcor negative samples
+                    wiki_title = item.find('pmw')['target']
                 ent_id = entityNameIdMap.compatible_ent_id(wiki_title)
                 if ent_id is not None:
                     if add_noise and noise_type=='distort_meto_labels':
@@ -100,6 +105,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     create_necessary_folders(args.output_folder)
 
-    samples = process_wimcor(args.wimcor_folder+"wimcor_positive.xml")
-    write_to_file(samples, args.output_folder+"wimcor_positive.txt")
-
+    for filename, metotype in zip(['wimcor_positive', 'wimcor_negative'], ['MET', 'LIT']):
+        samples, _ = process_wimcor(args.wimcor_folder+filename+'.xml', metotype=metotype)
+        write_to_file(samples, args.output_folder+filename+'.txt')
