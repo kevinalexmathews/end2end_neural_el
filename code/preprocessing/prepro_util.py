@@ -214,7 +214,7 @@ class Chunker(object):
                     self.sent_cnt += 1
                     self.chunk_words.append(line)
                 elif line.startswith('MMSTART_'):
-                    ent_id = line[8:]   # assert that ent_id in wiki_name_id_map
+                    ent_id, metotype = line[8:].split('_')   # assert that ent_id in wiki_name_id_map
                     self.ground_truth.append(ent_id)
                     self.begin_gm.append(len(self.chunk_words))
                 elif line == 'MMEND':
