@@ -215,7 +215,6 @@ def _parse_args():
 
 if __name__ == "__main__":
     args, train_args = _parse_args()
-    print("train_args:\n", train_args)
     # TODO do this argument transfering in the load_train_args instead of train.py, evaluate.py, ensemble_evaluate.py
     train_args.checkpoint_model_num = args.checkpoint_model_num
     train_args.entity_extension = args.entity_extension
@@ -230,5 +229,6 @@ if __name__ == "__main__":
                                             args.print_global_pairwise_scores)
     from model.util import Tee
     tee = Tee(args.output_folder+'evaluate-log.txt', 'a')
+    print("train_args:\n", train_args)
     evaluate()
 

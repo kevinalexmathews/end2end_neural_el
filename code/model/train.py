@@ -498,10 +498,10 @@ def terminate():
 
 if __name__ == "__main__":
     args = _parse_args()
-    print(args)
     log_args(args.output_folder+"train_args.txt")
     from model.util import Tee
     tee = Tee(args.output_folder+'train-log.txt', 'a')
+    print(args)
     try:
         train()
     except KeyboardInterrupt:
