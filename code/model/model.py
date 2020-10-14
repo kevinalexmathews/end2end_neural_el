@@ -323,8 +323,6 @@ class Model(BaseModel):
             stack_values.append(self.log_cand_entities_scores)
         if self.args.nn_components.find("attention") != -1:
             stack_values.append(self.attention_scores)
-        if self.args.nn_components.find("metotype") != -1:
-            stack_values.append(self.metotype)
 
         scalar_predictors = tf.stack(stack_values, axis=3)
         #print("scalar_predictors = ", scalar_predictors)   # [batch, num_mentions, 30, 3]

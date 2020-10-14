@@ -16,7 +16,7 @@ def parse_sequence_example(serialized):
             "cand_entities_labels": tf.VarLenFeature(tf.int64),
             "cand_entities_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "ground_truth": tf.FixedLenSequenceFeature([], dtype=tf.int64),
-            "metotype": tf.VarLenFeature(dtype=tf.float32)
+            "metotype": tf.FixedLenSequenceFeature([], dtype=tf.int64)
     }
     if True:
         sequence_features["begin_gm"] = tf.FixedLenSequenceFeature([], dtype=tf.int64)
@@ -41,7 +41,7 @@ def parse_sequence_example(serialized):
            sequence["cand_entities_len"],\
            sequence["ground_truth"], context["ground_truth_len"],\
            sequence["begin_gm"], sequence["end_gm"], \
-           tf.sparse_tensor_to_dense((sequence["metotype"]))
+           sequence["metotype"]
     #return context, sequence
 
 

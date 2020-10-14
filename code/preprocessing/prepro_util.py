@@ -446,7 +446,7 @@ class EncoderGenerator(object):
             ground_truth_enc = [self._wikiid2nnid[gt] if gt in self._wikiid2nnid else self._wikiid2nnid["<u>"]
                             for gt in sample.ground_truth]
             ground_truth_errors_cnt += ground_truth_enc.count(self._wikiid2nnid["<u>"])   # it is always zero
-            metotype_enc = [[1]*len(ce) if mt == 'MET' else [0]*len(ce) for mt, ce in zip(sample.metotype, sample.cand_entities)]
+            metotype_enc = [1 if mt == 'MET' else 0 for mt in sample.metotype] # LIT:0 and MET:1
 
             #print(colored("New sample", 'red'))
             #print(sample)
@@ -606,7 +606,7 @@ class TFRecordsGenerator(object):
                 "cand_entities_labels": _int64list_feature_list(sample.cand_entities_labels),
                 "cand_entities_len": _int64_feature_list(sample.cand_entities_len),
                 "ground_truth": _int64_feature_list(sample.ground_truth),
-                "metotype": _floatlist_feature_list(sample.metotype)
+                "metotype": _int64_feature_list(sample.metotype)
         }
         if isinstance(sample, SampleEncoded):
             feature_list["begin_gm"] = _int64_feature_list(sample.begin_gm)

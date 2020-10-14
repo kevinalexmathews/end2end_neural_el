@@ -352,8 +352,6 @@ class Model(BaseModel):
             stack_values.append(self.log_cand_entities_scores)
         if self.args.nn_components.find("attention") != -1:
             stack_values.append(self.attention_scores)
-        if self.args.nn_components.find("metotype") != -1:
-            stack_values.append(self.metotype)
         if len(stack_values) == 1:
             # since only one scalar omit the final ffnn
             self.final_scores = stack_values[0]
