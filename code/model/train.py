@@ -60,7 +60,7 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
 
         except tf.errors.OutOfRangeError:
             print(name)
-            micro_f1, macro_f1 = evaluator.print_log_results(model.tf_writers, args.eval_cnt, el_mode)
+            micro_f1, macro_f1 = evaluator.print_log_results(model.tf_writers, args.eval_cnt, el_mode, tracker=None, name=None)
             break
     return micro_f1, macro_f1
 

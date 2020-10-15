@@ -3,7 +3,6 @@ from collections import defaultdict
 from operator import itemgetter
 import tensorflow as tf
 
-
 class Evaluator(object):
     def __init__(self, threshold, name):
         self.threshold = threshold    # confidence level
@@ -38,6 +37,51 @@ class Evaluator(object):
             return True
         return False
 
+    def _metotype_score_computation(self, el_mode, tracker, name):
+        '''
+        This rountine is relevant only for combo dataset because
+        AIDA is not labelled for metonymy.
+        '''
+        if tracker is None or 'combo' not in name:
+            return
+
+        for mt in tracker.best_cand_pos.keys():
+            micro_tp, micro_fp, micro_fn = 0, 0, 0
+            macro_pr, macro_re = 0, 0
+
+            mt_docs = [tup[0] for tup in tracker.best_cand_pos[mt]]
+            assert (all(item in self.docs for item in mt_docs))
+
+            ctr = 0
+            for docid in self.docs:
+                if docid  in mt_docs:
+                    ctr +=1
+                    tp, fp, fn = self.TP[docid], self.FP[docid], self.FN[docid]
+                    micro_tp += tp
+                    micro_fp += fp
+                    micro_fn += fn
+
+                    doc_precision = tp / (tp + fp + 1e-6)
+                    macro_pr += doc_precision
+
+                    doc_recall = tp / (tp + fn + 1e-6)
+                    macro_re += doc_recall
+
+            micro_pr = 100 * micro_tp / (micro_tp + micro_fp + 1e-6)
+            micro_re = 100 * micro_tp / (micro_tp + micro_fn + 1e-6)
+            micro_f1 = 2*micro_pr*micro_re / (micro_pr + micro_re + 1e-6)
+
+            macro_pr = 100 * macro_pr / ctr
+            macro_re = 100 * macro_re / ctr
+            macro_f1 = 2*macro_pr*macro_re / (macro_pr + macro_re + 1e-6)
+
+            mt_name = 'LIT' if mt==0 else 'MET'
+            print('metotype: {}'.format(mt_name))
+            print("micro", "P: %.1f" % micro_pr, "\tR: %.1f" % micro_re, "\tF1: %.1f" % micro_f1)
+            print("macro", "P: %.1f" % macro_pr, "\tR: %.1f" % macro_re, "\tF1: %.1f" % macro_f1)
+
+        return
+
     def _score_computation(self, el_mode):
         micro_tp, micro_fp, micro_fn = 0, 0, 0
         macro_pr, macro_re = 0, 0
@@ -67,8 +111,9 @@ class Evaluator(object):
 
         return micro_pr, micro_re, micro_f1, macro_pr, macro_re, macro_f1
 
-    def print_log_results(self, tf_writer, eval_cnt, el_mode):
+    def print_log_results(self, tf_writer, eval_cnt, el_mode, tracker, name):
         micro_pr, micro_re, micro_f1, macro_pr, macro_re, macro_f1 = self._score_computation(el_mode)
+        self._metotype_score_computation(el_mode, tracker, name)
 
         print("micro", "P: %.1f" % micro_pr, "\tR: %.1f" % micro_re, "\tF1: %.1f" % micro_f1)
         print("macro", "P: %.1f" % macro_pr, "\tR: %.1f" % macro_re, "\tF1: %.1f" % macro_f1)
@@ -394,6 +439,7 @@ def metrics_calculation_and_prediction_printing(evaluator, final_scores,
     if el_mode is False:
         begin_gm = begin_span
         end_gm = end_span
+
     # for each candidate span find which is the cand entity with the highest score
     for b in range(final_scores.shape[0]):  # batch
         spans = []

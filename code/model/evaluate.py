@@ -62,7 +62,7 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
             if args.print_predictions:
                 printPredictions.file_ended()
             print(name)
-            micro_f1, macro_f1 = evaluator.print_log_results(None, -1, el_mode)
+            micro_f1, macro_f1 = evaluator.print_log_results(None, -1, el_mode, tracker, name)
             tracker.print_results()
             break
     return macro_f1
