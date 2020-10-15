@@ -323,6 +323,38 @@ def threshold_calculation(final_scores, cand_entities_len, cand_entities,
     return tp_fp_batch_scores, fn_batch_scores
 
 
+class Tracker(object):
+    def __init__(self):
+        # to track best candidate position wrt metotype;
+        self.best_cand_pos = {}
+        self.gt_not_present = {}
+        self.text = ''
+
+    def increment_gt_not_present(self, metotype):
+        try:
+            self.gt_not_present[metotype] += 1
+        except KeyError:
+            self.gt_not_present[metotype] = 1
+
+    def insert_best_cand_pos(self, metotype, docid, best_cand_position):
+        try:
+            self.best_cand_pos[metotype].append((docid, best_cand_position))
+        except KeyError:
+            self.best_cand_pos[metotype] = [(docid, best_cand_position)]
+
+    def print_results(self):
+        assert (set(self.best_cand_pos.keys()) == set(self.gt_not_present.keys()))
+
+        for mt in self.best_cand_pos.keys():
+            mt_name = 'LIT' if mt==0 else 'MET'
+
+            total_best_cand_pos = sum([tup[1] for tup in self.best_cand_pos[mt]])
+            num_best_cand_pos = len(self.best_cand_pos[mt])
+            print('metotype:{}, size: {}, mean cand pos (index): {:3.2f}'.format(mt_name, num_best_cand_pos, total_best_cand_pos/num_best_cand_pos))
+
+            perc_gt_not_present = self.gt_not_present[mt] * 100 / (num_best_cand_pos + self.gt_not_present[mt])
+            print('metotype:{}, gt_not_present: {} ({:3.2f}%)'.format(mt_name, self.gt_not_present[mt], perc_gt_not_present))
+
 def metrics_calculation(evaluator, final_scores, cand_entities_len, cand_entities,
                         begin_span, end_span, spans_len,
                         begin_gm, end_gm, ground_truth,
@@ -357,8 +389,8 @@ def metrics_calculation_and_prediction_printing(evaluator, final_scores,
                                                 begin_gm, end_gm, ground_truth,
                                                 ground_truth_len, words_len, chunk_id,
                                                 words, chars, chars_len,
-                                                scores_l, global_pairwise_scores, scores_names_l,
-                                                el_mode, printPredictions=None):
+                                                scores_l, global_pairwise_scores, metotype, scores_names_l,
+                                                el_mode, tracker, printPredictions=None):
     if el_mode is False:
         begin_gm = begin_span
         end_gm = end_span
@@ -429,6 +461,12 @@ def metrics_calculation_and_prediction_printing(evaluator, final_scores,
                 fn_pred.append((gm_num, *t))
             else:
                 gt_minus_fn_pred.append((gm_num, *t))
+
+        if True:
+            printPredictions.track_data(fn_pred, gt_minus_fn_pred,
+                                        cand_entities[b], cand_entities_len[b],
+                                        metotype[b], tracker, docid)
+
 
         if printPredictions is not None:
             gmask = global_pairwise_scores[0][b] if global_pairwise_scores else None

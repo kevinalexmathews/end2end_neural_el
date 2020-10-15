@@ -88,6 +88,29 @@ class PrintPredictions(object):
     def scores_text(self, scores_l, scores_names_l, i, j):
         return ' '.join([scores_name + "=" + str(score[i][j]) for scores_name, score in zip(scores_names_l, scores_l)])
 
+    def track_data(self, fn_pred, gt_minus_fn_pred,
+                   cand_entities, cand_entities_len,
+                   metotype, tracker, docid):
+        for mylist in [gt_minus_fn_pred, fn_pred]:
+            for i, (gm_num, _, _, gt) in enumerate(mylist):
+                gt_present = False
+
+                for j in range(cand_entities_len[gm_num]):
+                    if cand_entities[gm_num][j] == gt:
+                        gt_present = True
+                        tracker.text += '*candidate {}: {}\n'.format(j, self.map_entity(cand_entities[gm_num][j]))
+
+                        tracker.text += 'best candidate pos: {}\n'.format(j)
+                        tracker.text += 'metotype: {}\n'.format('LIT' if metotype[gm_num]==0 else 'MET')
+                        tracker.insert_best_cand_pos(metotype[gm_num], docid, j)
+                    else:
+                        tracker.text += ' candidate {}: {}\n'.format(j, self.map_entity(cand_entities[gm_num][j]))
+                tracker.text +=  '---------------\n'
+
+                if not gt_present:
+                    tracker.increment_gt_not_present(metotype[gm_num])
+        return None
+
     def process_sample(self, chunkid,
                        tp_pred, fp_pred, fn_pred, gt_minus_fn_pred,
                        words, words_len, chars, chars_len,

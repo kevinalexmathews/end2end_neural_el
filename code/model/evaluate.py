@@ -5,6 +5,7 @@ import os
 import tensorflow as tf
 from model.model_ablations import Model
 from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_printing
+from evaluation.metrics import Tracker
 import model.train as train
 from model.util import load_train_args
 
@@ -14,6 +15,7 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
         printPredictions.process_file(el_mode, name, opt_thr)
     model.sess.run(iterator.initializer)
     evaluator = Evaluator(opt_thr, name=name)
+    tracker = Tracker()
 
     while True:
         try:
@@ -46,9 +48,14 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
 
             retrieve_l.append(scores_retrieve_l)
             retrieve_l.append(global_pairwise_scores)
+
+            # retrieve metotype info too
+            retrieve_l.append(model.metotype)
+
             result_l = model.sess.run(
                 retrieve_l, feed_dict={model.input_handle_ph: dataset_handle, model.dropout: 1})
             metrics_calculation_and_prediction_printing(evaluator, *result_l, scores_names_l, el_mode,
+                                          tracker,
                                           printPredictions=printPredictions)
 
         except tf.errors.OutOfRangeError:
@@ -56,6 +63,7 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
                 printPredictions.file_ended()
             print(name)
             micro_f1, macro_f1 = evaluator.print_log_results(None, -1, el_mode)
+            tracker.print_results()
             break
     return macro_f1
 
