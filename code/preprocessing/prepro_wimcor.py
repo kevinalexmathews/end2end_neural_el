@@ -32,7 +32,7 @@ def process_wimcor(in_filepath, add_noise=None, noise_type=None, metotype='MET')
     for sample_idx, item in enumerate(soup.find_all('sample')):
         inserted_already = False
         cur_sample = []
-        cur_sample.append('DOCSTART_{}\n'.format(sample_idx))
+        cur_sample.append('DOCSTART_wimcor{}{}\n'.format(sample_idx, metotype))
 
         lcontext = str(item.find('pmw').previous_sibling) if item.find('pmw').previous_sibling else ""
         pmw = item.find('pmw').text
