@@ -20,7 +20,7 @@ repeats=$3
 echo 'repeats =' $repeats
 
 # set train variable nn_components
-if  [[ $experiment_name == *"mitmeto"* ]]; then
+if  true ; then # [[ $experiment_name == *"mitmeto"* ]]; then
     nn_components="pem_lstm_metotype_attention"
 elif  [[ $experiment_name == *"ohnemeto"* ]]; then
     nn_components="pem_lstm_attention"
@@ -31,27 +31,41 @@ fi
 echo 'nn_components =' $nn_components
 
 # set train/evaluate variable distortion
-if  [[ $experiment_name == *"contextdistorted"* ]]; then
+if [[ $experiment_name == *"contextdistorted"* ]]; then
     distortion="_contextdistorted_"
+elif [[ $experiment_name == *"ellabelsdistorted"* ]]; then
+    distortion="_ellabelsdistorted_"
+elif [[ $experiment_name == *"metolabelsdistorted"* ]]; then
+    distortion="_metolabelsdistorted_"
 elif  [[ $experiment_name != *"distorted"* ]]; then
     distortion='_'
 fi
 echo 'distortion =' $distortion
 
 # set variable strict
-if  [[ $experiment_name == *"strictreordered"* ]]; then
+if  true ; then # [[ $experiment_name == *"strictreordered"* ]]; then
     strict='strict'
 else
     strict=''
 fi 
 echo 'strict =' $strict
 
-if  [[ $experiment_name == *"extended"* ]]; then
+if  true ; then # [[ $experiment_name == *"extended"* ]]; then
     extended='extended'
 else
     extended=''
 fi 
 echo 'extended =' $extended
+
+if  [[ $experiment_name == *"aida"* ]]; then
+    foo="aida_"
+    bar="aida_"
+else
+    foo=combo_"$extended"_"$strict"reordered"$distortion"
+    bar=combo_"$extended"_"$strict"reordered"$distortion"
+fi
+echo 'foo =' $foo
+echo 'bar =' $bar
 
 # pre-processing
 if  [[ $options == *"prepro"* ]]; then
@@ -66,7 +80,7 @@ if  [[ $options == *"train"* ]]; then
         --experiment_name=$experiment_name \
         --training_name=group_global/global_model_v$v \
         --nn_components=$nn_components \
-        --train_datasets=combo_"$extended"_"$strict"reordered"$distortion"train  --ed_datasets=combo_"$extended"_"$strict"reordered"$distortion"dev \
+        --train_datasets="$foo"train --ed_datasets="$bar"dev \
         --evaluation_minutes=10 --nepoch_no_imprv=6 \
         --ed_val_datasets=0 \
         --ent_vecs_regularization=l2dropout  \
@@ -85,7 +99,7 @@ if  [[ $options == *"evaluate"* ]]; then
     python -u -m model.evaluate \
         --training_name=group_global/global_model_v$v \
         --experiment_name=$experiment_name \
-        --ed_datasets=combo_"$extended"_"$strict"reordered"$distortion"test_z_aida_test \
+        --ed_datasets=combo_"$extended"_"$strict"reordered_test_z_aida_test \
         --ed_val_datasets=0  --el_datasets=""  --el_val_datasets=0
     done
 fi
