@@ -105,10 +105,12 @@ class PrintPredictions(object):
                         tracker.insert_best_cand_pos(metotype[gm_num], docid, j)
                     else:
                         tracker.text += ' candidate {}: {}\n'.format(j, self.map_entity(cand_entities[gm_num][j]))
-                tracker.text +=  '---------------\n'
 
                 if not gt_present:
+                    tracker.text += 'gt not present; gt: {}\n'.format(self.map_entity(gt))
                     tracker.increment_gt_not_present(metotype[gm_num])
+
+                tracker.text +=  '---------------\n'
         return None
 
     def process_sample(self, chunkid,

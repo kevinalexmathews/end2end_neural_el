@@ -400,6 +400,9 @@ class Tracker(object):
             perc_gt_not_present = self.gt_not_present[mt] * 100 / (num_best_cand_pos + self.gt_not_present[mt])
             print('metotype:{}, gt_not_present: {} ({:3.2f}%)'.format(mt_name, self.gt_not_present[mt], perc_gt_not_present))
 
+        # with open('candidates.txt', 'w') as text_file:
+            # text_file.write('{}'.format(self.text))
+
 def metrics_calculation(evaluator, final_scores, cand_entities_len, cand_entities,
                         begin_span, end_span, spans_len,
                         begin_gm, end_gm, ground_truth,
