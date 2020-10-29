@@ -254,7 +254,10 @@ if __name__ == "__main__":
         tracker = Tracker(args.tracker_folder)
 
     from model.util import Tee
-    tee = Tee(args.output_folder+'evaluate-log.txt', 'a')
+    if args.p_e_m_algorithm:
+        tee = Tee(args.output_folder+'evaluate-log-pemalgorithm.txt', 'w')
+    else:
+        tee = Tee(args.output_folder+'evaluate-log.txt', 'w')
     print("train_args:\n", train_args)
     evaluate()
 
