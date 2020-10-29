@@ -369,11 +369,30 @@ def threshold_calculation(final_scores, cand_entities_len, cand_entities,
 
 
 class Tracker(object):
-    def __init__(self):
+    def __init__(self, tracker_folder):
         # to track best candidate position wrt metotype;
         self.best_cand_pos = {}
         self.gt_not_present = {}
+        self.logpem_scores = {}
+        self.final_scores = {}
         self.text = ''
+        self.tracker_folder = tracker_folder
+
+    def process_file(self, el_mode, name):
+        filepath = self.tracker_folder + ("el/" if el_mode else "ed/") + name
+        self.fout = open(filepath, "w")
+
+    def insert_logpem_score(self, metotype, logpem_score):
+        try:
+            self.logpem_scores[metotype].append(logpem_score)
+        except KeyError:
+            self.logpem_scores[metotype] = [logpem_score]
+
+    def insert_final_score(self, metotype, final_score):
+        try:
+            self.final_scores[metotype].append(final_score)
+        except KeyError:
+            self.final_scores[metotype] = [final_score]
 
     def increment_gt_not_present(self, metotype):
         try:
@@ -394,14 +413,24 @@ class Tracker(object):
             mt_name = 'LIT' if mt==0 else 'MET'
 
             total_best_cand_pos = sum([tup[1] for tup in self.best_cand_pos[mt]])
+            total_logpem_scores = sum([score for score in self.logpem_scores[mt]])
+            total_final_scores = sum([score for score in self.final_scores[mt]])
             num_best_cand_pos = len(self.best_cand_pos[mt])
-            print('metotype:{}, size: {}, mean cand pos (index): {:3.2f}'.format(mt_name, num_best_cand_pos, total_best_cand_pos/num_best_cand_pos))
+            print('metotype:{}, size: {}, mean cand pos (index): {:3.2f},'
+                  'mean logpem score: {:3.2f}, mean final score: {:3.2f}'.format(
+                            mt_name,
+                            num_best_cand_pos,
+                            total_best_cand_pos/num_best_cand_pos,
+                            total_logpem_scores/num_best_cand_pos,
+                            total_final_scores/num_best_cand_pos))
 
             perc_gt_not_present = self.gt_not_present[mt] * 100 / (num_best_cand_pos + self.gt_not_present[mt])
-            print('metotype:{}, gt_not_present: {} ({:3.2f}%)'.format(mt_name, self.gt_not_present[mt], perc_gt_not_present))
+            print('metotype:{}, gt_not_present: {} ({:3.2f}%)'.format(
+                            mt_name,
+                            self.gt_not_present[mt],
+                            perc_gt_not_present))
 
-        # with open('candidates.txt', 'w') as text_file:
-            # text_file.write('{}'.format(self.text))
+        self.fout.write('{}'.format(self.text))
 
 def metrics_calculation(evaluator, final_scores, cand_entities_len, cand_entities,
                         begin_span, end_span, spans_len,
@@ -511,9 +540,11 @@ def metrics_calculation_and_prediction_printing(evaluator, final_scores,
             else:
                 gt_minus_fn_pred.append((gm_num, *t))
 
-        if True:
+        if tracker:
+            logpem_index = scores_names_l.index('logpem')
             printPredictions.track_data(fn_pred, gt_minus_fn_pred,
                                         cand_entities[b], cand_entities_len[b],
+                                        final_scores[b], scores_l[logpem_index][b],
                                         metotype[b], tracker, docid)
 
 

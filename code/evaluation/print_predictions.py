@@ -90,6 +90,7 @@ class PrintPredictions(object):
 
     def track_data(self, fn_pred, gt_minus_fn_pred,
                    cand_entities, cand_entities_len,
+                   final_scores, logpem_scores,
                    metotype, tracker, docid):
         for mylist in [gt_minus_fn_pred, fn_pred]:
             for i, (gm_num, _, _, gt) in enumerate(mylist):
@@ -98,13 +99,18 @@ class PrintPredictions(object):
                 for j in range(cand_entities_len[gm_num]):
                     if cand_entities[gm_num][j] == gt:
                         gt_present = True
-                        tracker.text += '*candidate {}: {}\n'.format(j, self.map_entity(cand_entities[gm_num][j]))
-
+                        tracker.text += '*candidate {}: {:60}, \t{:6.3f}, \t{:6.3f}\n'.format(j,
+                                                            self.map_entity(cand_entities[gm_num][j]),
+                                                            logpem_scores[gm_num][j], final_scores[gm_num][j])
                         tracker.text += 'best candidate pos: {}\n'.format(j)
                         tracker.text += 'metotype: {}\n'.format('LIT' if metotype[gm_num]==0 else 'MET')
                         tracker.insert_best_cand_pos(metotype[gm_num], docid, j)
+                        tracker.insert_logpem_score(metotype[gm_num], logpem_scores[gm_num][j])
+                        tracker.insert_final_score(metotype[gm_num], final_scores[gm_num][j])
                     else:
-                        tracker.text += ' candidate {}: {}\n'.format(j, self.map_entity(cand_entities[gm_num][j]))
+                        tracker.text += ' candidate {}: {:60}, \t{:6.3f}, \t{:6.3f}\n'.format(j,
+                                                            self.map_entity(cand_entities[gm_num][j]),
+                                                            logpem_scores[gm_num][j], final_scores[gm_num][j])
 
                 if not gt_present:
                     tracker.text += 'gt not present; gt: {}\n'.format(self.map_entity(gt))

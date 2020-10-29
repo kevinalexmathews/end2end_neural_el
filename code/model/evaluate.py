@@ -5,7 +5,6 @@ import os
 import tensorflow as tf
 from model.model_ablations import Model
 from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_printing
-from evaluation.metrics import Tracker
 import model.train as train
 from model.util import load_train_args
 
@@ -15,7 +14,8 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
         printPredictions.process_file(el_mode, name, opt_thr)
     model.sess.run(iterator.initializer)
     evaluator = Evaluator(opt_thr, name=name)
-    tracker = Tracker()
+    if args.make_tracker:
+        tracker.process_file(el_mode, name)
 
     while True:
         try:
@@ -63,7 +63,8 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
                 printPredictions.file_ended()
             print(name)
             micro_f1, macro_f1 = evaluator.print_log_results(None, -1, el_mode, tracker, name)
-            tracker.print_results()
+            if args.make_tracker:
+                tracker.print_results()
             break
     return macro_f1
 
@@ -170,6 +171,10 @@ def _parse_args():
                              "truth and simple baselines.")
     parser.add_argument("--no_print_predictions", dest='print_predictions', action='store_false')
     parser.set_defaults(print_predictions=True)
+    parser.add_argument("--make_tracker", dest='make_tracker', action='store_true',
+                        help="prints for each dataset the tracker text to a file.")
+    parser.add_argument("--no_make_tracker", dest='make_tracker', action='store_false')
+    parser.set_defaults(make_tracker=True)
     parser.add_argument("--print_global_voters", type=bool, default=False)
     parser.add_argument("--print_global_pairwise_scores", type=bool, default=False)
 
@@ -198,6 +203,7 @@ def _parse_args():
                          args.training_name+"/"
     args.checkpoints_folder = args.output_folder + "checkpoints/"
     args.predictions_folder = args.output_folder + "predictions/"
+    args.tracker_folder = args.output_folder + "tracker/"
 
     if args.p_e_m_algorithm:
         args.predictions_folder = args.output_folder + "p_e_m_predictions/"
@@ -208,6 +214,13 @@ def _parse_args():
         os.makedirs(args.predictions_folder+"ed/")
     if args.print_predictions and not os.path.exists(args.predictions_folder+"el/"):
         os.makedirs(args.predictions_folder+"el/")
+
+    if args.make_tracker and not os.path.exists(args.tracker_folder):
+        os.makedirs(args.tracker_folder)
+    if args.make_tracker and not os.path.exists(args.tracker_folder+"ed/"):
+        os.makedirs(args.tracker_folder+"ed/")
+    if args.make_tracker and not os.path.exists(args.tracker_folder+"el/"):
+        os.makedirs(args.tracker_folder+"el/")
 
     train_args = load_train_args(args.output_folder, "evaluate")
 
@@ -229,12 +242,17 @@ if __name__ == "__main__":
     train.args = args
     args.batch_size = train_args.batch_size
     printPredictions = None
+    tracker = None
     if args.print_predictions:
         from evaluation.print_predictions import PrintPredictions
         printPredictions = PrintPredictions(config.base_folder+"data/tfrecords/"+
                          args.experiment_name+"/", args.predictions_folder, args.entity_extension,
                                             args.gm_bucketing_pempos, args.print_global_voters,
                                             args.print_global_pairwise_scores)
+    if args.make_tracker:
+        from evaluation.metrics import Tracker
+        tracker = Tracker(args.tracker_folder)
+
     from model.util import Tee
     tee = Tee(args.output_folder+'evaluate-log.txt', 'a')
     print("train_args:\n", train_args)
