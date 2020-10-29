@@ -371,16 +371,16 @@ def threshold_calculation(final_scores, cand_entities_len, cand_entities,
 class Tracker(object):
     def __init__(self, tracker_folder):
         # to track best candidate position wrt metotype;
+       self.tracker_folder = tracker_folder
+
+    def process_file(self, el_mode, name):
+        filepath = self.tracker_folder + ("el/" if el_mode else "ed/") + name
+        self.fout = open(filepath, "w")
         self.best_cand_pos = {}
         self.gt_not_present = {}
         self.logpem_scores = {}
         self.final_scores = {}
         self.text = ''
-        self.tracker_folder = tracker_folder
-
-    def process_file(self, el_mode, name):
-        filepath = self.tracker_folder + ("el/" if el_mode else "ed/") + name
-        self.fout = open(filepath, "w")
 
     def insert_logpem_score(self, metotype, logpem_score):
         try:
